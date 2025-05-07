@@ -9,24 +9,29 @@ jobs:
       - run:
           name: Ejecutar pruebas
           command: |
-            echo "✅ Pruebas ejecutadas exitosamente"
+            echo "🧪 Simulando error..."
+            exit 1  # Fuerza un error para probar la notificación
 
-  notify-success:
+  notify-failure:
     docker:
       - image: cimg/base:stable
     steps:
       - run:
-          name: Enviar mensaje de éxito a Telegram
+          name: Enviar mensaje de error a Telegram
           command: |
             curl -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
               -d chat_id="${TELEGRAM_CHAT_ID}" \
-              -d text="✅ Pipeline ejecutado correctamente en CircleCI para el proyecto JenkinsEx1 🎉"
+              -d text="❌ El pipeline de CircleCI falló. Revisa el proyecto JenkinsEx1."
 
 workflows:
   version: 2
-  flujo-completo:
+  flujo-con-error:
     jobs:
       - build
-      - notify-success:
+      - notify-failure:
           requires:
             - build
+          filters:
+            branches:
+              only: main
+          when: on_fail
