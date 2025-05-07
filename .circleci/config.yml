@@ -1,36 +1,43 @@
 version: 2.1
 
-jobs:
-  build:
+executors:
+  default:
     docker:
       - image: cimg/python:3.11
+
+jobs:
+  build:
+    executor: default
     steps:
       - checkout
       - run:
-          name: Simular error y guardar estado
+          name: Simular fallo pero continuar
           command: |
-            echo "❌ Falla simulada"
+            echo "❌ Simulando un fallo"
             echo "failed" > status.txt
+            false || true  # No detiene el job
       - persist_to_workspace:
           root: .
           paths:
             - status.txt
 
   notify:
-    docker:
-      - image: cimg/base:stable
+    executor: default
     steps:
       - attach_workspace:
           at: /workspace
       - run:
-          name: Leer estado y enviar notificación a Telegram
+          name: Enviar notificación a Telegram
           command: |
             STATUS=$(cat /workspace/status.txt)
             if [ "$STATUS" = "failed" ]; then
-              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-                -d chat_id="${TELEGRAM_CHAT_ID}" \
-                -d text="❌ El job 'build' falló en el pipeline *${CIRCLE_BUILD_URL}*" \
-                -d parse_mode="Markdown"
+              curl -s -X POST "https://api.telegram.org/bot7534877343:AAEemGGoNy9A2b6irCXCt6VCYISGEnyZzl8/sendMessage" \
+              -d chat_id=1122221631 \
+              -d text="🚨 El job *build* ha fallado en CircleCI."
+            else
+              curl -s -X POST "https://api.telegram.org/bot7534877343:AAEemGGoNy9A2b6irCXCt6VCYISGEnyZzl8/sendMessage" \
+              -d chat_id=1122221631 \
+              -d text="✅ El job *build* fue exitoso en CircleCI."
             fi
 
 workflows:
