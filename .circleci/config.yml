@@ -7,31 +7,28 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Ejecutar pruebas
+          name: Ejecutar pruebas (simula error)
           command: |
             echo "🧪 Simulando error..."
-            exit 1  # Fuerza un error para probar la notificación
+            exit 1
 
-  notify-failure:
+  notify:
     docker:
       - image: cimg/base:stable
     steps:
       - run:
-          name: Enviar mensaje de error a Telegram
+          name: Notificar por Telegram
           command: |
             curl -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
               -d chat_id="${TELEGRAM_CHAT_ID}" \
-              -d text="❌ El pipeline de CircleCI falló. Revisa el proyecto JenkinsEx1."
+              -d text="❌ El pipeline de CircleCI falló en el job de build."
 
 workflows:
   version: 2
-  flujo-con-error:
+  flujo:
     jobs:
-      - build
-      - notify-failure:
+      - build:
+          continue_on_error: true
+      - notify:
           requires:
             - build
-          filters:
-            branches:
-              only: main
-          when: on_fail
