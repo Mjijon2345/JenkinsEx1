@@ -7,24 +7,30 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Simular error
+          name: Simular error y guardar estado
           command: |
-            echo "🧪 Falla simulada"
-            exit 1
+            echo "❌ Falla simulada"
+            echo "failed" > status.txt
+      - persist_to_workspace:
+          root: .
+          paths:
+            - status.txt
 
   notify:
     docker:
       - image: cimg/base:stable
     steps:
+      - attach_workspace:
+          at: /workspace
       - run:
-          name: Enviar notificación si falló build
+          name: Leer estado y enviar notificación a Telegram
           command: |
-            if [ "${CIRCLE_JOB_STATUS}" = "failed" ]; then
+            STATUS=$(cat /workspace/status.txt)
+            if [ "$STATUS" = "failed" ]; then
               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
                 -d chat_id="${TELEGRAM_CHAT_ID}" \
-                -d text="❌ El pipeline falló en el job 'build'"
-            else
-              echo "✅ El job anterior no falló, no se envía notificación."
+                -d text="❌ El job 'build' falló en el pipeline *${CIRCLE_BUILD_URL}*" \
+                -d parse_mode="Markdown"
             fi
 
 workflows:
