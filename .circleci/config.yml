@@ -7,9 +7,9 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Ejecutar pruebas (simula error)
+          name: Simular error
           command: |
-            echo "🧪 Simulando error..."
+            echo "🧪 Falla simulada"
             exit 1
 
   notify:
@@ -17,18 +17,21 @@ jobs:
       - image: cimg/base:stable
     steps:
       - run:
-          name: Notificar por Telegram
+          name: Enviar notificación si falló build
           command: |
-            curl -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-              -d chat_id="${TELEGRAM_CHAT_ID}" \
-              -d text="❌ El pipeline de CircleCI falló en el job de build."
+            if [ "${CIRCLE_JOB_STATUS}" = "failed" ]; then
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="❌ El pipeline falló en el job 'build'"
+            else
+              echo "✅ El job anterior no falló, no se envía notificación."
+            fi
 
 workflows:
   version: 2
   flujo:
     jobs:
-      - build:
-          continue_on_error: true
+      - build
       - notify:
           requires:
             - build
