@@ -1,50 +1,32 @@
 version: 2.1
 
-executors:
-  default:
-    docker:
-      - image: cimg/python:3.11
-
 jobs:
   build:
-    executor: default
+    docker:
+      - image: cimg/python:3.11
     steps:
       - checkout
       - run:
-          name: Simular fallo pero continuar
+          name: Ejecutar pruebas
           command: |
-            echo "❌ Simulando un fallo"
-            echo "failed" > status.txt
-            false || true  # No detiene el job
-      - persist_to_workspace:
-          root: .
-          paths:
-            - status.txt
+            echo "✅ Pruebas ejecutadas exitosamente"
 
-  notify:
-    executor: default
+  notify-success:
+    docker:
+      - image: cimg/base:stable
     steps:
-      - attach_workspace:
-          at: /workspace
       - run:
-          name: Enviar notificación a Telegram
+          name: Enviar mensaje de éxito a Telegram
           command: |
-            STATUS=$(cat /workspace/status.txt)
-            if [ "$STATUS" = "failed" ]; then
-              curl -s -X POST "https://api.telegram.org/bot7534877343:AAEemGGoNy9A2b6irCXCt6VCYISGEnyZzl8/sendMessage" \
-              -d chat_id=1122221631 \
-              -d text="🚨 El job *build* ha fallado en CircleCI."
-            else
-              curl -s -X POST "https://api.telegram.org/bot7534877343:AAEemGGoNy9A2b6irCXCt6VCYISGEnyZzl8/sendMessage" \
-              -d chat_id=1122221631 \
-              -d text="✅ El job *build* fue exitoso en CircleCI."
-            fi
+            curl -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+              -d chat_id="${TELEGRAM_CHAT_ID}" \
+              -d text="✅ Pipeline ejecutado correctamente en CircleCI para el proyecto JenkinsEx1 🎉"
 
 workflows:
   version: 2
-  flujo:
+  flujo-completo:
     jobs:
       - build
-      - notify:
+      - notify-success:
           requires:
             - build
