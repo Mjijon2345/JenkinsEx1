@@ -14,7 +14,7 @@ jobs:
           name: Instalar dependencias
           command: |
             pip install -r requirements.txt
-            pip install flake8
+            pip install pytest flake8
       - persist_to_workspace:
           root: .
           paths:
@@ -44,23 +44,20 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Verificar código con flake8
+          name: Ejecutar flake8
           command: flake8 .
 
   notify:
     executor: python-executor
     steps:
-      - attach_workspace:
-          at: .
       - run:
-          name: Enviar mensaje a Telegram
+          name: Enviar notificación Telegram
           command: |
             curl -s -X POST https://api.telegram.org/bot7534877343:AAEemGGoNy9A2b6irCXCt6VCYISGEnyZzl8/sendMessage \
               -d chat_id=1122221631 \
               -d text="🚨 Falló el pipeline JenkinsEx1. Revisa CircleCI."
 
 workflows:
-  version: 2
   flujo:
     jobs:
       - instalar-dependencias
@@ -78,6 +75,3 @@ workflows:
             - test-1
             - test-2
             - flake8-analysis
-          filters:
-            branches:
-              only: main
