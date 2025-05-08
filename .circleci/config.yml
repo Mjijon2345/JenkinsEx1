@@ -3,11 +3,11 @@ version: 2.1
 executors:
   python-executor:
     docker:
-      - image: cimg/python:3.10
-    working_directory: ~/repo
+      - image: cimg/python:3.11
+    working_directory: ~/project
 
 jobs:
-  install:
+  instalar:
     executor: python-executor
     steps:
       - checkout
@@ -17,42 +17,41 @@ jobs:
             pip install -r requirements.txt
             pip install flake8
 
-  test:
-    executor: python-executor
-    parallelism: 2
-    steps:
-      - checkout
-      - run:
-          name: Ejecutar pruebas unitarias en paralelo
-          command: |
-            circleci tests split test.py | xargs -n 1 python
-
-  lint:
+  test1:
     executor: python-executor
     steps:
       - checkout
       - run:
-          name: Analizar código con flake8
-          command: flake8 . --exit-zero
+          name: Ejecutar pruebas 1
+          command: pytest test.py -k "suma"
 
-  notify:
+  test2:
     executor: python-executor
     steps:
+      - checkout
       - run:
-          name: Enviar mensaje por Telegram
-          command: |
-            curl -s -X POST https://api.telegram.org/bot7534877343:AAEemGGoNy9A2b6irCXCt6VCYISGEnyZzl8sendMessage \
-              -d chat_id=1122221631 
-              -d text="✅ Pipeline JenkinsEx1 finalizado con éxito."
+          name: Ejecutar pruebas 2
+          command: pytest test.py -k "resta"
+
+  test3:
+    executor: python-executor
+    steps:
+      - checkout
+      - run:
+          name: Ejecutar pruebas 3
+          command: pytest test.py -k "multiplicacion"
 
 workflows:
   version: 2
-  flujo:
+  paralelo:
     jobs:
-      - install
-      - test:
-          requires: [install]
-      - lint:
-          requires: [install]
-      - notify:
-          requires: [test, lint]
+      - instalar
+      - test1:
+          requires:
+            - instalar
+      - test2:
+          requires:
+            - instalar
+      - test3:
+          requires:
+            - instalar
