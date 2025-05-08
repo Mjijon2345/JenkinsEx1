@@ -1,13 +1,9 @@
 version: 2.1
 
-executors:
-  python-executor:
-    docker:
-      - image: cimg/python:3.11
-
 jobs:
   instalar-dependencias:
-    executor: python-executor
+    docker:
+      - image: cimg/python:3.11
     steps:
       - checkout
       - run:
@@ -21,41 +17,56 @@ jobs:
             - .
 
   test-1:
-    executor: python-executor
+    docker:
+      - image: cimg/python:3.11
     steps:
       - attach_workspace:
           at: .
       - run:
           name: Ejecutar prueba suma
-          command: pytest Pipeline_Jenkins/test.py -k "suma"
+          command: |
+            pip install -r requirements.txt
+            pip install pytest
+            pytest Pipeline_Jenkins/test.py -k "suma"
 
   test-2:
-    executor: python-executor
+    docker:
+      - image: cimg/python:3.11
     steps:
       - attach_workspace:
           at: .
       - run:
           name: Ejecutar prueba resta
-          command: pytest Pipeline_Jenkins/test.py -k "resta"
+          command: |
+            pip install -r requirements.txt
+            pip install pytest
+            pytest Pipeline_Jenkins/test.py -k "resta"
 
   flake8-analysis:
-    executor: python-executor
+    docker:
+      - image: cimg/python:3.11
     steps:
       - attach_workspace:
           at: .
       - run:
           name: Análisis con flake8
-          command: flake8 .
+          command: |
+            pip install -r requirements.txt
+            pip install flake8
+            flake8 .
 
   notify:
-    executor: python-executor
+    docker:
+      - image: cimg/python:3.11
     steps:
+      - attach_workspace:
+          at: .
       - run:
-          name: Enviar mensaje a Telegram
+          name: Enviar notificación a Telegram
           command: |
             curl -s -X POST https://api.telegram.org/bot7534877343:AAEemGGoNy9A2b6irCXCt6VCYISGEnyZzl8/sendMessage \
               -d chat_id=1122221631 \
-              -d text="✅ El pipeline JenkinsEx1 ha terminado. Revisa los resultados en CircleCI."
+              -d text="📣 El pipeline JenkinsEx1 ha finalizado. Verifica los resultados en CircleCI."
 
 workflows:
   flujo:
