@@ -4,54 +4,60 @@ executors:
   python-executor:
     docker:
       - image: cimg/python:3.11
-    working_directory: ~/project
+    working_directory: ~/repo
 
 jobs:
-  instalar:
+  install-deps:
     executor: python-executor
     steps:
       - checkout
       - run:
           name: Instalar dependencias
           command: |
+            python -m pip install --upgrade pip
             pip install -r requirements.txt
-            pip install flake8
 
   test1:
     executor: python-executor
     steps:
       - checkout
       - run:
-          name: Ejecutar pruebas 1
-          command: pytest test.py -k "suma"
+          name: Ejecutar pruebas - parte 1
+          command: |
+            pip install -r requirements.txt
+            pytest test.py -k "suma"
 
   test2:
     executor: python-executor
     steps:
       - checkout
       - run:
-          name: Ejecutar pruebas 2
-          command: pytest test.py -k "resta"
+          name: Ejecutar pruebas - parte 2
+          command: |
+            pip install -r requirements.txt
+            pytest test.py -k "resta"
 
-  test3:
+  lint:
     executor: python-executor
     steps:
       - checkout
       - run:
-          name: Ejecutar pruebas 3
-          command: pytest test.py -k "multiplicacion"
+          name: Análisis con flake8
+          command: |
+            pip install -r requirements.txt
+            flake8 .
 
 workflows:
   version: 2
-  paralelo:
+  flujo:
     jobs:
-      - instalar
+      - install-deps
       - test1:
           requires:
-            - instalar
+            - install-deps
       - test2:
           requires:
-            - instalar
-      - test3:
+            - install-deps
+      - lint:
           requires:
-            - instalar
+            - install-deps
