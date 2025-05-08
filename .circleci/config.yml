@@ -55,7 +55,7 @@ jobs:
           command: |
             curl -s -X POST https://api.telegram.org/bot7534877343:AAEemGGoNy9A2b6irCXCt6VCYISGEnyZzl8/sendMessage \
               -d chat_id=1122221631 \
-              -d text="🚨 Falló el pipeline JenkinsEx1. Revisa CircleCI."
+              -d text="✅ El pipeline JenkinsEx1 ha terminado. Revisa los resultados en CircleCI."
 
 workflows:
   flujo:
@@ -75,7 +75,3 @@ workflows:
             - test-1
             - test-2
             - flake8-analysis
-          filters:
-            branches:
-              only: main
-          when: on_fail  # Notificar solo si alguno de los anteriores falla
