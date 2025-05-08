@@ -8,27 +8,39 @@ jobs:
       - checkout
       - run:
           name: Instalar dependencias
-          command: pip install -r requirements.txt
+          command: |
+            pip install -r requirements.txt
+            pip install flake8
       - run:
           name: Ejecutar pruebas
-          command: pytest
+          command: pytest test.py -k "suma"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
 
   notify:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/python:3.11
     steps:
+      - attach_workspace:
+          at: .
       - run:
-          name: Enviar notificación a Telegram
+          name: Enviar mensaje a Telegram
           command: |
             curl -s -X POST https://api.telegram.org/bot7534877343:AAEemGGoNy9A2b6irCXCt6VCYISGEnyZzl8/sendMessage \
               -d chat_id=1122221631 \
-              -d text="✅ El pipeline de CircleCI finalizó correctamente."
+              -d text="🚨 Falló el pipeline JenkinsEx1. Revisa CircleCI."
 
 workflows:
-  version: 2
   flujo:
     jobs:
       - build
       - notify:
           requires:
             - build
+          filters:
+            branches:
+              only: main
+          # Ejecutar solo si build falla
+          # Para esto se requiere una lógica extra si se desea precisión condicional (como usar "continue-on-error: true" + analizar resultado).
