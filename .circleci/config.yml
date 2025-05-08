@@ -1,9 +1,13 @@
 version: 2.1
 
-jobs:
-  build:
+executors:
+  python-executor:
     docker:
       - image: cimg/python:3.11
+
+jobs:
+  instalar-dependencias:
+    executor: python-executor
     steps:
       - checkout
       - run:
@@ -11,17 +15,40 @@ jobs:
           command: |
             pip install -r requirements.txt
             pip install flake8
-      - run:
-          name: Ejecutar pruebas
-          command: pytest test.py -k "suma"
       - persist_to_workspace:
           root: .
           paths:
             - .
 
+  test-1:
+    executor: python-executor
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Ejecutar prueba suma
+          command: pytest Pipeline_Jenkins/test.py -k "suma"
+
+  test-2:
+    executor: python-executor
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Ejecutar prueba resta
+          command: pytest Pipeline_Jenkins/test.py -k "resta"
+
+  flake8-analysis:
+    executor: python-executor
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Verificar código con flake8
+          command: flake8 .
+
   notify:
-    docker:
-      - image: cimg/python:3.11
+    executor: python-executor
     steps:
       - attach_workspace:
           at: .
@@ -33,14 +60,24 @@ jobs:
               -d text="🚨 Falló el pipeline JenkinsEx1. Revisa CircleCI."
 
 workflows:
+  version: 2
   flujo:
     jobs:
-      - build
+      - instalar-dependencias
+      - test-1:
+          requires:
+            - instalar-dependencias
+      - test-2:
+          requires:
+            - instalar-dependencias
+      - flake8-analysis:
+          requires:
+            - instalar-dependencias
       - notify:
           requires:
-            - build
+            - test-1
+            - test-2
+            - flake8-analysis
           filters:
             branches:
               only: main
-          # Ejecutar solo si build falla
-          # Para esto se requiere una lógica extra si se desea precisión condicional (como usar "continue-on-error: true" + analizar resultado).
