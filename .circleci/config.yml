@@ -1,24 +1,27 @@
 version: 2.1
 
-jobs:
-  instalar-dependencias:
+executors:
+  python-executor:
     docker:
       - image: cimg/python:3.11
+
+jobs:
+  instalar-dependencias:
+    executor: python-executor
     steps:
       - checkout
       - run:
           name: Instalar dependencias
           command: |
             pip install -r requirements.txt
-            pip install flake8 pytest
+            pip install flake8
       - persist_to_workspace:
           root: .
           paths:
             - .
 
-  test-1:
-    docker:
-      - image: cimg/python:3.11
+  test-suma:
+    executor: python-executor
     steps:
       - attach_workspace:
           at: .
@@ -26,12 +29,10 @@ jobs:
           name: Ejecutar prueba suma
           command: |
             pip install -r requirements.txt
-            pip install pytest
-            pytest Pipeline_Jenkins/test.py -k "suma"
+            pytest test.py -k "suma"
 
-  test-2:
-    docker:
-      - image: cimg/python:3.11
+  test-resta:
+    executor: python-executor
     steps:
       - attach_workspace:
           at: .
@@ -39,43 +40,40 @@ jobs:
           name: Ejecutar prueba resta
           command: |
             pip install -r requirements.txt
-            pip install pytest
-            pytest Pipeline_Jenkins/test.py -k "resta"
+            pytest test.py -k "resta"
 
   flake8-analysis:
-    docker:
-      - image: cimg/python:3.11
+    executor: python-executor
     steps:
       - attach_workspace:
           at: .
       - run:
-          name: Análisis con flake8
+          name: Ejecutar flake8
           command: |
             pip install -r requirements.txt
-            pip install flake8
             flake8 .
 
   notify:
-    docker:
-      - image: cimg/python:3.11
+    executor: python-executor
     steps:
       - attach_workspace:
           at: .
       - run:
-          name: Enviar notificación a Telegram
+          name: Notificación Telegram
           command: |
             curl -s -X POST https://api.telegram.org/bot7534877343:AAEemGGoNy9A2b6irCXCt6VCYISGEnyZzl8/sendMessage \
               -d chat_id=1122221631 \
-              -d text="📣 El pipeline JenkinsEx1 ha finalizado. Verifica los resultados en CircleCI."
+              -d text="🔔 Finalizó el pipeline JenkinsEx1. Revisa el estado en CircleCI."
 
 workflows:
+  version: 2
   flujo:
     jobs:
       - instalar-dependencias
-      - test-1:
+      - test-suma:
           requires:
             - instalar-dependencias
-      - test-2:
+      - test-resta:
           requires:
             - instalar-dependencias
       - flake8-analysis:
@@ -83,6 +81,6 @@ workflows:
             - instalar-dependencias
       - notify:
           requires:
-            - test-1
-            - test-2
+            - test-suma
+            - test-resta
             - flake8-analysis
