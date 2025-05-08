@@ -3,61 +3,71 @@ version: 2.1
 executors:
   python-executor:
     docker:
-      - image: cimg/python:3.11
-    working_directory: ~/repo
+      - image: cimg/python:3.11.1
 
 jobs:
-  install-deps:
+  install-dependencies:
     executor: python-executor
     steps:
       - checkout
       - run:
           name: Instalar dependencias
           command: |
-            python -m pip install --upgrade pip
             pip install -r requirements.txt
+            pip install flake8
 
-  test1:
+  test-parte-1:
     executor: python-executor
     steps:
       - checkout
       - run:
           name: Ejecutar pruebas - parte 1
-          command: |
-            pip install -r requirements.txt
-            pytest test.py -k "suma"
+          command: pytest test.py -k "suma"
 
-  test2:
+  test-parte-2:
     executor: python-executor
     steps:
       - checkout
       - run:
           name: Ejecutar pruebas - parte 2
-          command: |
-            pip install -r requirements.txt
-            pytest test.py -k "resta"
+          command: pytest test.py -k "resta"
 
-  lint:
+  flake8-analysis:
     executor: python-executor
     steps:
       - checkout
       - run:
           name: Análisis con flake8
+          command: flake8 .
+
+  notify:
+    executor: python-executor
+    steps:
+      - run:
+          name: Enviar notificación Telegram
           command: |
-            pip install -r requirements.txt
-            flake8 .
+            curl -s -X POST https://api.telegram.org/bot${7534877343:AAEemGGoNy9A2b6irCXCt6VCYISGEnyZzl8}/sendMessage \
+              -d chat_id=${1122221631} \
+              -d text="📣 El pipeline ha finalizado. Revisa los resultados en CircleCI."
 
 workflows:
   version: 2
   flujo:
     jobs:
-      - install-deps
-      - test1:
+      - install-dependencies
+      - test-parte-1:
           requires:
-            - install-deps
-      - test2:
+            - install-dependencies
+      - test-parte-2:
           requires:
-            - install-deps
-      - lint:
+            - install-dependencies
+      - flake8-analysis:
           requires:
-            - install-deps
+            - install-dependencies
+      - notify:
+          requires:
+            - test-parte-1
+            - test-parte-2
+            - flake8-analysis
+          # Esto es clave para que se ejecute SIEMPRE:
+          when: always
