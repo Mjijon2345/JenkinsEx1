@@ -1,32 +1,32 @@
 version: 2.1
 
-jobs:
-  build:
+executors:
+  python-executor:
     docker:
       - image: cimg/python:3.11
+
+jobs:
+  test-job:
+    parameters:
+      param:
+        type: string
+    executor: python-executor
     steps:
       - checkout
       - run:
-          name: Ejecutar pruebas
+          name: Instalar dependencias
           command: |
-            echo "✅ Pruebas ejecutadas exitosamente"
-
-  notify-success:
-    docker:
-      - image: cimg/base:stable
-    steps:
+            pip install -r requisitos.py
       - run:
-          name: Enviar mensaje de éxito a Telegram
+          name: Ejecutar pruebas con param << parameters.param >>
           command: |
-            curl -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-              -d chat_id="${TELEGRAM_CHAT_ID}" \
-              -d text="✅ Pipeline ejecutado correctamente en CircleCI para el proyecto JenkinsEx1 🎉"
+            pytest test.py -k "<< parameters.param >>"
 
 workflows:
   version: 2
-  flujo-completo:
+  pruebas-paralelas:
     jobs:
-      - build
-      - notify-success:
-          requires:
-            - build
+      - test-job:
+          matrix:
+            parameters:
+              param: ["A", "B", "C"]
