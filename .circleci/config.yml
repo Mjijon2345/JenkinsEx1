@@ -14,7 +14,7 @@ jobs:
           name: Instalar dependencias
           command: |
             pip install -r requirements.txt
-            pip install pytest flake8
+            pip install flake8 pytest
       - persist_to_workspace:
           root: .
           paths:
@@ -44,14 +44,14 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Ejecutar flake8
+          name: Análisis con flake8
           command: flake8 .
 
   notify:
     executor: python-executor
     steps:
       - run:
-          name: Enviar notificación Telegram
+          name: Enviar mensaje a Telegram
           command: |
             curl -s -X POST https://api.telegram.org/bot7534877343:AAEemGGoNy9A2b6irCXCt6VCYISGEnyZzl8/sendMessage \
               -d chat_id=1122221631 \
@@ -75,3 +75,7 @@ workflows:
             - test-1
             - test-2
             - flake8-analysis
+          filters:
+            branches:
+              only: main
+          when: on_fail  # Notificar solo si alguno de los anteriores falla
